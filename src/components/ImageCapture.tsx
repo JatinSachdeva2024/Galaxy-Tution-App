@@ -26,8 +26,8 @@ export default function ImageCapture({ onImageSelected, isProcessing }: Props) {
 
       <h2>Capture your text</h2>
       <p className="muted">
-        Frame only the words you need — notes, a book paragraph, or a whiteboard. Extra
-        graphics and background clutter are ignored.
+        Take a clear photo of notes, a book page, or a whiteboard. Hold steady and make sure
+        the text is in focus.
       </p>
 
       <input

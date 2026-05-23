@@ -1,40 +1,34 @@
 import { createWorker, PSM, type Line, type Page } from "tesseract.js";
 
-const MIN_LINE_CONFIDENCE = 68;
-const MIN_WORD_CONFIDENCE = 62;
-const MAX_IMAGE_DIM = 2200;
+/** Word confidence floor — kept low so real photos still pass */
+const MIN_WORD_CONFIDENCE = 35;
+const MIN_LINE_CONFIDENCE = 40;
 
-/** Boost contrast so OCR targets ink/text, not background texture */
-async function preprocessForTextScan(source: File | string): Promise<string> {
+async function upscaleIfSmall(source: File | string): Promise<File | string> {
   const url = typeof source === "string" ? source : URL.createObjectURL(source);
 
   try {
     const img = await loadImage(url);
-    let { width, height } = img;
+    const minSide = Math.min(img.width, img.height);
 
-    const scale = Math.min(1, MAX_IMAGE_DIM / Math.max(width, height));
-    width = Math.round(width * scale);
-    height = Math.round(height * scale);
+    if (minSide >= 1200) {
+      return source;
+    }
+
+    const scale = 1200 / minSide;
+    const width = Math.round(img.width * scale);
+    const height = Math.round(img.height * scale);
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(img, 0, 0, width, height);
+    canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
 
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const { data } = imageData;
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png");
+    });
 
-    for (let i = 0; i < data.length; i += 4) {
-      const gray =
-        0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-      const contrast = (gray - 128) * 1.35 + 128;
-      const boosted = Math.max(0, Math.min(255, contrast));
-      data[i] = data[i + 1] = data[i + 2] = boosted;
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-    return canvas.toDataURL("image/png");
+    return new File([blob], "scan.png", { type: "image/png" });
   } finally {
     if (typeof source !== "string") {
       URL.revokeObjectURL(url);
@@ -51,35 +45,24 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-function alnumRatio(text: string): number {
-  if (!text.length) return 0;
-  const alnum = text.match(/[\p{L}\p{N}]/gu);
-  return (alnum?.length ?? 0) / text.length;
+function hasReadableContent(text: string): boolean {
+  return /[\p{L}\p{N}]{2,}/u.test(text);
 }
 
-function isNoiseToken(token: string): boolean {
-  const t = token.trim();
-  if (!t) return true;
-  if (t.length === 1 && !/[\p{L}\p{N}]/u.test(t)) return true;
-  if (/^[^\p{L}\p{N}\s]+$/u.test(t) && t.length >= 2) return true;
-  if (t.length >= 3 && alnumRatio(t) < 0.35) return true;
-  return false;
-}
-
-function isNoiseLine(line: string): boolean {
+function isObviousNoiseLine(line: string): boolean {
   const t = line.trim();
   if (!t) return true;
-  if (t.length >= 4 && alnumRatio(t) < 0.45) return true;
-  if (/^(.)\1{4,}$/.test(t.replace(/\s/g, ""))) return true;
+  if (t.length >= 8 && !/[\p{L}\p{N}]/u.test(t)) return true;
   return false;
 }
 
-function lineFromWords(line: Line): string {
-  return line.words
-    .filter((w) => w.confidence >= MIN_WORD_CONFIDENCE && !isNoiseToken(w.text))
-    .map((w) => w.text.trim())
-    .filter(Boolean)
-    .join(" ");
+function cleanPlainText(text: string): string {
+  return text
+    .split("\n")
+    .map((line) => line.replace(/\s{2,}/g, " ").trim())
+    .filter((line) => line && !isObviousNoiseLine(line))
+    .join("\n")
+    .trim();
 }
 
 function collectLines(page: Page): Line[] {
@@ -92,40 +75,56 @@ function collectLines(page: Page): Line[] {
   return lines;
 }
 
-function extractReadableText(page: Page): string {
-  const rawLines = collectLines(page);
+function extractFromBlocks(page: Page): string {
+  const lines = collectLines(page);
   const kept: string[] = [];
 
-  for (const line of rawLines) {
-    const wordBuilt = lineFromWords(line);
+  for (const line of lines) {
+    const fromWords = line.words
+      .filter((w) => w.confidence >= MIN_WORD_CONFIDENCE && w.text.trim())
+      .map((w) => w.text.trim())
+      .join(" ")
+      .trim();
+
     const candidate =
-      wordBuilt.length > 0
-        ? wordBuilt
-        : line.confidence >= MIN_LINE_CONFIDENCE
-          ? line.text.trim()
-          : "";
+      fromWords ||
+      (line.confidence >= MIN_LINE_CONFIDENCE ? line.text.trim() : "");
 
-    if (!candidate || isNoiseLine(candidate)) continue;
-    if (line.confidence < MIN_LINE_CONFIDENCE && wordBuilt.length === 0) continue;
-
-    kept.push(candidate);
+    if (candidate && !isObviousNoiseLine(candidate)) {
+      kept.push(candidate);
+    }
   }
 
-  const merged: string[] = [];
+  const unique: string[] = [];
   for (const line of kept) {
-    const norm = line.replace(/\s{2,}/g, " ").trim();
-    if (!norm || merged[merged.length - 1] === norm) continue;
-    merged.push(norm);
+    if (unique[unique.length - 1] !== line) unique.push(line);
   }
 
-  return merged.join("\n").trim();
+  return unique.join("\n").trim();
+}
+
+function pickBestResult(page: Page): string {
+  const fromBlocks = extractFromBlocks(page);
+  const fromPlain = cleanPlainText(page.text ?? "");
+
+  if (fromBlocks.length >= fromPlain.length * 0.5 && hasReadableContent(fromBlocks)) {
+    return fromBlocks;
+  }
+  if (hasReadableContent(fromPlain)) {
+    return fromPlain;
+  }
+  if (fromBlocks.length > 0) {
+    return fromBlocks;
+  }
+
+  return (page.text ?? "").trim();
 }
 
 export async function extractTextFromImage(
   imageSource: string | File,
   onProgress?: (pct: number) => void
 ): Promise<string> {
-  const prepared = await preprocessForTextScan(imageSource);
+  const input = await upscaleIfSmall(imageSource);
 
   const worker = await createWorker("eng", 1, {
     logger: (m) => {
@@ -140,8 +139,13 @@ export async function extractTextFromImage(
       tessedit_pageseg_mode: PSM.AUTO,
     });
 
-    const { data } = await worker.recognize(prepared);
-    return extractReadableText(data);
+    const { data } = await worker.recognize(
+      input,
+      {},
+      { text: true, blocks: true }
+    );
+
+    return pickBestResult(data);
   } finally {
     await worker.terminate();
   }

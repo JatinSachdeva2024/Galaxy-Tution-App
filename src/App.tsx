@@ -34,10 +34,8 @@ export default function App() {
 
     try {
       const extracted = await extractTextFromImage(file, setScanProgress);
-      if (!extracted) {
-        setError(
-          "No clear text found. Crop closer to the words, use good lighting, and avoid busy backgrounds."
-        );
+      if (!extracted || !/[\p{L}\p{N}]/u.test(extracted)) {
+        setError("Couldn't read text from this image. Try a sharper photo with the words in focus.");
         return;
       }
       setText(extracted);
