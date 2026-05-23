@@ -1,0 +1,60 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #1a1a1a;
+  --surface: rgba(18, 18, 18, 0.82);
+  --surface-2: rgba(32, 32, 32, 0.9);
+  --border: rgba(255, 255, 255, 0.12);
+  --text: #f2f2f0;
+  --muted: #a8a8a4;
+  --accent: #0a0a0a;
+  --accent-hover: #2a2a2a;
+  --accent-on-dark: #f2f2f0;
+  --pill-bg: #ecece8;
+  --pill-track: #0a0a0a;
+  --success: #d4d4d0;
+  --paper: #faf6eb;
+  --line-blue: #a8c4e8;
+  --margin-red: #e8a0a0;
+  --ink: #1a2744;
+  --radius: 14px;
+  --font: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "Orbitron", system-ui, sans-serif;
+  --font-heading: "Syne", system-ui, sans-serif;
+  --glass-blur: 16px;
+}
+
+html {
+  height: 100%;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  min-height: 100dvh;
+}
+
+body {
+  font-family: var(--font);
+  background-color: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+}

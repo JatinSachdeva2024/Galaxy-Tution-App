@@ -1,0 +1,50 @@
+.galaxy-pixel-card {
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+  border: 2px solid #0a0a0a;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  container-type: inline-size;
+}
+
+.galaxy-title-card {
+  width: 100%;
+  height: 100%;
+  min-height: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: linear-gradient(
+    145deg,
+    rgba(236, 236, 232, 0.95) 0%,
+    rgba(220, 220, 216, 0.92) 50%,
+    rgba(200, 200, 196, 0.94) 100%
+  );
+  padding: 0.75rem 1.35rem;
+  box-sizing: border-box;
+  container-type: inline-size;
+}
+
+.galaxy-title-card__glow {
+  display: none;
+}
+
+.galaxy-title-card__name {
+  margin: 0;
+  max-width: 100%;
+  text-align: center;
+  line-height: 1;
+  font-family: var(--font-display);
+  /* Scale with card width so GALAXY never clips */
+  font-size: clamp(1.65rem, 13.5cqi, 2.85rem);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #0a0a0a;
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+}

@@ -1,0 +1,55 @@
+.step-pills {
+  margin-bottom: 1.75rem;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.step-pills__track {
+  display: flex;
+  gap: 5px;
+  width: 100%;
+  padding: 5px;
+  background: #0a0a0a;
+  border-radius: 999px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+}
+
+.step-pill {
+  flex: 1;
+  min-width: 0;
+  padding: 0.7rem 0.35rem;
+  border-radius: 999px;
+  background: #ecece8;
+  color: #0a0a0a;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: clamp(0.62rem, 2.8vw, 0.75rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.15;
+  transition: background 0.2s, color 0.2s;
+}
+
+.step-pill--current {
+  background: #f8f8f4;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.step-pill--done {
+  background: #e2e2de;
+  color: #1a1a1a;
+}
+
+.step-pill--upcoming {
+  background: #d4d4d0;
+  color: rgba(10, 10, 10, 0.42);
+}
+
+@media (max-width: 360px) {
+  .step-pill {
+    letter-spacing: 0.06em;
+    padding: 0.65rem 0.2rem;
+  }
+}

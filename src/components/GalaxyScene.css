@@ -1,0 +1,145 @@
+.galaxy-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 30% 20%, #1a1040 0%, #0a0618 45%, #030208 100%);
+}
+
+.galaxy-scene__nebula {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(ellipse at 70% 60%, rgba(124, 110, 240, 0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 80%, rgba(255, 120, 200, 0.12) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 15%, rgba(80, 180, 255, 0.15) 0%, transparent 40%);
+  animation: nebula-drift 12s ease-in-out infinite alternate;
+}
+
+.galaxy-scene__sun {
+  position: absolute;
+  right: 18%;
+  top: 22%;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff8e0, #ffd54f 40%, #ff9800 85%);
+  box-shadow:
+    0 0 20px #ff9800,
+    0 0 40px rgba(255, 152, 0, 0.5);
+  animation: sun-pulse 3s ease-in-out infinite;
+}
+
+.galaxy-scene__sun-glow {
+  position: absolute;
+  right: calc(18% - 12px);
+  top: calc(22% - 12px);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 200, 80, 0.35) 0%, transparent 70%);
+  animation: sun-pulse 3s ease-in-out infinite reverse;
+}
+
+.galaxy-scene__star {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 4px #fff, 0 0 8px rgba(200, 220, 255, 0.8);
+  animation: star-twinkle ease-in-out infinite;
+}
+
+.galaxy-scene__planet {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow:
+    inset -4px -4px 8px rgba(0, 0, 0, 0.35),
+    0 0 12px rgba(255, 255, 255, 0.08);
+  animation: planet-float 6s ease-in-out infinite;
+}
+
+.galaxy-scene__planet--ringed::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 160%;
+  height: 35%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(200, 220, 255, 0.2);
+}
+
+.galaxy-scene__shooting {
+  position: absolute;
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #fff, transparent);
+  top: 35%;
+  left: -80px;
+  transform: rotate(-25deg);
+  opacity: 0;
+  animation: shooting-star 5s ease-in-out infinite;
+  animation-delay: 2s;
+}
+
+@keyframes star-twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes sun-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.08);
+    filter: brightness(1.15);
+  }
+}
+
+@keyframes planet-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes nebula-drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(-3%, 2%) scale(1.05);
+  }
+}
+
+@keyframes shooting-star {
+  0%,
+  85%,
+  100% {
+    opacity: 0;
+    left: -80px;
+  }
+  88% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 0;
+    left: 110%;
+  }
+}
