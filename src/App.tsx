@@ -35,7 +35,9 @@ export default function App() {
     try {
       const extracted = await extractTextFromImage(file, setScanProgress);
       if (!extracted) {
-        setError("No text found in the image. Try a clearer photo with good lighting.");
+        setError(
+          "No clear text found. Crop closer to the words, use good lighting, and avoid busy backgrounds."
+        );
         return;
       }
       setText(extracted);
