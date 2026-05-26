@@ -4,7 +4,7 @@ import {
   buildWrappedLines,
   drawLineSpec,
   drawNotebookBackground,
-  isPastPageBottom,
+  LINES_PER_PAGE,
   PAPER_HEIGHT,
   PAPER_WIDTH,
 } from "./notebookDrawCore";
@@ -14,34 +14,52 @@ export interface NotebookOptions {
   style: HandwritingStyle;
 }
 
-export async function renderNotebookImage(options: NotebookOptions): Promise<string> {
+export async function renderNotebookImages(options: NotebookOptions): Promise<string[]> {
   const { text, style } = options;
 
   await document.fonts.ready;
 
-  const canvas = document.createElement("canvas");
+  const wrapped = buildWrappedLines(text, style);
+  const pages: string[] = [];
+
+  let pageLineIndex = 0;
+  let canvas = document.createElement("canvas");
   canvas.width = PAPER_WIDTH;
   canvas.height = PAPER_HEIGHT;
-  const ctx = canvas.getContext("2d")!;
-
+  let ctx = canvas.getContext("2d")!;
   drawNotebookBackground(ctx);
 
-  const wrapped = buildWrappedLines(text, style);
-  let lineIndex = 0;
+  const newPage = () => {
+    pages.push(canvas.toDataURL("image/png"));
+    canvas = document.createElement("canvas");
+    canvas.width = PAPER_WIDTH;
+    canvas.height = PAPER_HEIGHT;
+    ctx = canvas.getContext("2d")!;
+    drawNotebookBackground(ctx);
+    pageLineIndex = 0;
+  };
 
   for (const { line: pl, text: lineText } of wrapped) {
-    if (isPastPageBottom(lineIndex)) break;
+    if (pageLineIndex >= LINES_PER_PAGE) {
+      newPage();
+    }
 
     if (!lineText) {
-      lineIndex++;
+      pageLineIndex++;
       continue;
     }
 
-    drawLineSpec(ctx, buildLineSpec(pl, lineText, lineIndex, style));
-    lineIndex++;
+    drawLineSpec(ctx, buildLineSpec(pl, lineText, pageLineIndex, style));
+    pageLineIndex++;
   }
 
-  return canvas.toDataURL("image/png");
+  pages.push(canvas.toDataURL("image/png"));
+  return pages;
+}
+
+export async function renderNotebookImage(options: NotebookOptions): Promise<string> {
+  const pages = await renderNotebookImages(options);
+  return pages[0] ?? "";
 }
 
 export function downloadDataUrl(dataUrl: string, filename = "notebook-notes.png") {
@@ -49,4 +67,12 @@ export function downloadDataUrl(dataUrl: string, filename = "notebook-notes.png"
   link.href = dataUrl;
   link.download = filename;
   link.click();
+}
+
+export function downloadAllDataUrls(dataUrls: string[], baseName = "notebook-notes") {
+  dataUrls.forEach((url, idx) => {
+    const filename =
+      dataUrls.length === 1 ? `${baseName}.png` : `${baseName}-page-${idx + 1}.png`;
+    downloadDataUrl(url, filename);
+  });
 }

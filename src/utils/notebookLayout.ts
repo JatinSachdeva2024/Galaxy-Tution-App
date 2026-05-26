@@ -2,7 +2,7 @@ import type { HandwritingStyle } from "../types";
 import {
   buildLineSpec,
   buildWrappedLines,
-  isPastPageBottom,
+  LINES_PER_PAGE,
   type LineDrawSpec,
 } from "./notebookDrawCore";
 
@@ -11,17 +11,35 @@ export interface AnimationStep {
   activeLine: LineDrawSpec | null;
 }
 
-export function buildAnimationSteps(text: string, style: HandwritingStyle): AnimationStep[] {
+export interface PageAnimation {
+  steps: AnimationStep[];
+}
+
+export function buildPagedAnimation(text: string, style: HandwritingStyle): PageAnimation[] {
   const wrapped = buildWrappedLines(text, style);
-  const steps: AnimationStep[] = [];
-  const completedLines: LineDrawSpec[] = [];
-  let lineIndex = 0;
+  const pages: PageAnimation[] = [];
+
+  let pageCompleted: LineDrawSpec[] = [];
+  let pageSteps: AnimationStep[] = [];
+
+  let pageLineIndex = 0;
+
+  const flushPage = () => {
+    if (pageSteps.length === 0) return;
+    pages.push({ steps: pageSteps });
+    pageCompleted = [];
+    pageSteps = [];
+    pageLineIndex = 0;
+  };
 
   for (const { line: pl, text: lineText } of wrapped) {
-    if (isPastPageBottom(lineIndex)) break;
+    // New page when we hit the max line slots.
+    if (pageLineIndex >= LINES_PER_PAGE) {
+      flushPage();
+    }
 
     if (!lineText) {
-      lineIndex++;
+      pageLineIndex++;
       continue;
     }
 
@@ -30,24 +48,25 @@ export function buildAnimationSteps(text: string, style: HandwritingStyle): Anim
 
     for (const word of words) {
       partial = partial ? `${partial} ${word}` : word;
-      steps.push({
-        completedLines: [...completedLines],
-        activeLine: buildLineSpec(pl, partial, lineIndex, style, lineText),
+      pageSteps.push({
+        completedLines: [...pageCompleted],
+        activeLine: buildLineSpec(pl, partial, pageLineIndex, style, lineText),
       });
     }
 
-    completedLines.push(buildLineSpec(pl, lineText, lineIndex, style));
-    steps.push({
-      completedLines: [...completedLines],
+    pageCompleted.push(buildLineSpec(pl, lineText, pageLineIndex, style));
+    pageSteps.push({
+      completedLines: [...pageCompleted],
       activeLine: null,
     });
 
-    lineIndex++;
+    pageLineIndex++;
   }
 
-  if (steps.length === 0) {
-    steps.push({ completedLines: [], activeLine: null });
+  flushPage();
+  if (pages.length === 0) {
+    pages.push({ steps: [{ completedLines: [], activeLine: null }] });
   }
 
-  return steps;
+  return pages;
 }

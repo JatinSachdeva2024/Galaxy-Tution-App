@@ -144,6 +144,12 @@
   flex-wrap: wrap;
 }
 
+.pager {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
 .btn {
   flex: 1;
   min-width: 120px;

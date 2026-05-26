@@ -7,9 +7,12 @@ const BINDING_WIDTH = 72;
 export const MARGIN_LEFT = 118;
 const MARGIN_RIGHT = 56;
 const MARGIN_TOP = 88;
-const MARGIN_BOTTOM = 72;
+export const MARGIN_BOTTOM = 72;
 export const LINE_SPACING = 46;
 export const FIRST_LINE_Y = MARGIN_TOP + LINE_SPACING;
+
+export const LINES_PER_PAGE =
+  Math.floor((PAPER_HEIGHT - MARGIN_BOTTOM - FIRST_LINE_Y) / LINE_SPACING) + 1;
 
 export interface ParsedLine {
   text: string;

@@ -5,7 +5,7 @@ import TextEditor from "./components/TextEditor";
 import NotebookPreview from "./components/NotebookPreview";
 import type { HandwritingStyle, Step } from "./types";
 import { extractTextFromImage } from "./utils/ocr";
-import { downloadDataUrl } from "./utils/notebookRenderer";
+import { downloadAllDataUrls, downloadDataUrl } from "./utils/notebookRenderer";
 import GalaxyTitleCard from "./components/GalaxyTitleCard";
 import StepPills from "./components/StepPills";
 import "./App.css";
@@ -15,7 +15,7 @@ export default function App() {
   const [sourcePreview, setSourcePreview] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [style, setStyle] = useState<HandwritingStyle>("ballpoint");
-  const [notebookUrl, setNotebookUrl] = useState<string | null>(null);
+  const [notebookUrls, setNotebookUrls] = useState<string[] | null>(null);
 
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
@@ -48,14 +48,14 @@ export default function App() {
   }, []);
 
   const goToPreview = () => {
-    setNotebookUrl(null);
+    setNotebookUrls(null);
     setStep("preview");
   };
 
   const startOver = () => {
     setStep("capture");
     setText("");
-    setNotebookUrl(null);
+    setNotebookUrls(null);
     setError(null);
     if (sourcePreview) {
       URL.revokeObjectURL(sourcePreview);
@@ -131,13 +131,19 @@ export default function App() {
                 <NotebookPreview
                   text={text}
                   style={style}
-                  imageUrl={notebookUrl}
-                  onWritingComplete={setNotebookUrl}
+                  imageUrls={notebookUrls}
+                  onWritingComplete={setNotebookUrls}
                   onBack={() => {
-                    setNotebookUrl(null);
+                    setNotebookUrls(null);
                     setStep("edit");
                   }}
-                  onDownload={() => notebookUrl && downloadDataUrl(notebookUrl)}
+                  onDownloadCurrent={(index) => {
+                    const url = notebookUrls?.[index];
+                    if (url) downloadDataUrl(url, `notebook-notes-page-${index + 1}.png`);
+                  }}
+                  onDownloadAll={() => {
+                    if (notebookUrls?.length) downloadAllDataUrls(notebookUrls, "notebook-notes");
+                  }}
                   onStartOver={startOver}
                 />
               </motion.div>
