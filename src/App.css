@@ -287,6 +287,17 @@
   justify-content: center;
 }
 
+.capture-loading {
+  position: relative;
+  margin-bottom: 1rem;
+  border-radius: var(--radius);
+  min-height: 120px;
+}
+
+.main > div {
+  position: relative;
+}
+
 .spinner {
   width: 36px;
   height: 36px;

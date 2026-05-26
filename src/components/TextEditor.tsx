@@ -42,8 +42,8 @@ export default function TextEditor({
       />
 
       <p className="format-hint muted small">
-        Tip: start a line with <code># </code> for red headings, <code>&gt; </code> for green,{" "}
-        <code>* </code> for orange — like colored pens in real notes.
+        Pen colors: default is <strong>blue</strong>. Start a line with <code># </code> for a blue
+        heading, <code>&gt; </code> or <code>* </code> for black ink.
       </p>
 
       <label className="field-label" htmlFor="handwriting-style">

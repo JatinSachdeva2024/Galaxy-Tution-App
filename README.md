@@ -30,18 +30,17 @@ npm run preview
 - **Tesseract.js** — On-device OCR (no API key; runs in the browser)
 - **Canvas** — Lined notebook background + handwriting fonts with subtle jitter
 
-## Colored pen lines (optional)
+## Pen colors (optional)
 
-Like real student notes, you can color lines in the editor:
+| Prefix | Ink |
+|--------|-----|
+| `# Heading` | Blue (title) |
+| `> note` or `* line` | Black |
+| (no prefix) | Blue ballpoint |
 
-| Prefix | Color |
-|--------|-------|
-| `# Heading` | Red (title) |
-| `> note` | Green |
-| `* highlight` | Orange |
-| (no prefix) | Ballpoint blue |
+## Handwriting styles
 
-Default style **Ballpoint** uses blue ink on white ruled paper with spiral binding.
+Choose from 7 styles in the editor: Ballpoint, Neat cursive, Casual, Loose & flowing, Quick notes, Soft script, and Study hand.
 
 ## Tips for best OCR results
 

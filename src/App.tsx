@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import ImageCapture from "./components/ImageCapture";
 import TextEditor from "./components/TextEditor";
 import NotebookPreview from "./components/NotebookPreview";
 import type { HandwritingStyle, Step } from "./types";
 import { extractTextFromImage } from "./utils/ocr";
-import { downloadDataUrl, renderNotebookImage } from "./utils/notebookRenderer";
+import { downloadDataUrl } from "./utils/notebookRenderer";
 import GalaxyTitleCard from "./components/GalaxyTitleCard";
 import StepPills from "./components/StepPills";
 import "./App.css";
@@ -18,7 +19,6 @@ export default function App() {
 
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
-  const [isRendering, setIsRendering] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleImageSelected = useCallback(async (file: File) => {
@@ -47,25 +47,10 @@ export default function App() {
     }
   }, []);
 
-  const renderNotebook = useCallback(async () => {
-    if (!text.trim()) return;
-    setIsRendering(true);
-    setError(null);
-    try {
-      const url = await renderNotebookImage({ text, style });
-      setNotebookUrl(url);
-    } catch {
-      setError("Failed to render notebook. Please try again.");
-    } finally {
-      setIsRendering(false);
-    }
-  }, [text, style]);
-
-  useEffect(() => {
-    if (step === "preview") {
-      renderNotebook();
-    }
-  }, [step, renderNotebook]);
+  const goToPreview = () => {
+    setNotebookUrl(null);
+    setStep("preview");
+  };
 
   const startOver = () => {
     setStep("capture");
@@ -82,53 +67,83 @@ export default function App() {
     <div className="app-shell">
       <div className="app-bg" aria-hidden="true" />
       <div className="app">
-      <header className="header">
-        <GalaxyTitleCard />
-        <p className="tagline">Photo → Edit → Handwritten notes</p>
-      </header>
+        <header className="header">
+          <GalaxyTitleCard />
+          <p className="tagline">Photo → Edit → Handwritten notes</p>
+        </header>
 
-      <StepPills current={step} />
+        <StepPills current={step} />
 
-      <main className="main">
-        {error && (
-          <div className="error-banner" role="alert">
-            {error}
-          </div>
-        )}
+        <main className="main">
+          {error && (
+            <div className="error-banner" role="alert">
+              {error}
+            </div>
+          )}
 
-        {isScanning && (
-          <div className="loading-overlay">
-            <div className="spinner" />
-            <p>Reading text from image… {scanProgress}%</p>
-          </div>
-        )}
+          <AnimatePresence mode="wait">
+            {step === "capture" && (
+              <motion.div
+                key="capture"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+              >
+                {isScanning && (
+                  <div className="loading-overlay capture-loading">
+                    <div className="spinner" />
+                    <p>Reading text from image… {scanProgress}%</p>
+                  </div>
+                )}
+                <ImageCapture onImageSelected={handleImageSelected} isProcessing={isScanning} />
+              </motion.div>
+            )}
 
-        {step === "capture" && (
-          <ImageCapture onImageSelected={handleImageSelected} isProcessing={isScanning} />
-        )}
+            {step === "edit" && (
+              <motion.div
+                key="edit"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+              >
+                <TextEditor
+                  text={text}
+                  onChange={setText}
+                  style={style}
+                  onStyleChange={setStyle}
+                  onBack={startOver}
+                  onNext={goToPreview}
+                  previewUrl={sourcePreview ?? undefined}
+                />
+              </motion.div>
+            )}
 
-        {step === "edit" && (
-          <TextEditor
-            text={text}
-            onChange={setText}
-            style={style}
-            onStyleChange={setStyle}
-            onBack={startOver}
-            onNext={() => setStep("preview")}
-            previewUrl={sourcePreview ?? undefined}
-          />
-        )}
-
-        {step === "preview" && (
-          <NotebookPreview
-            imageUrl={notebookUrl}
-            isRendering={isRendering}
-            onBack={() => setStep("edit")}
-            onDownload={() => notebookUrl && downloadDataUrl(notebookUrl)}
-            onStartOver={startOver}
-          />
-        )}
-      </main>
+            {step === "preview" && (
+              <motion.div
+                key="preview"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.25 }}
+              >
+                <NotebookPreview
+                  text={text}
+                  style={style}
+                  imageUrl={notebookUrl}
+                  onWritingComplete={setNotebookUrl}
+                  onBack={() => {
+                    setNotebookUrl(null);
+                    setStep("edit");
+                  }}
+                  onDownload={() => notebookUrl && downloadDataUrl(notebookUrl)}
+                  onStartOver={startOver}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </main>
       </div>
     </div>
   );
